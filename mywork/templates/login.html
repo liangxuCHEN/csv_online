@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}登录{% endblock %}
+{% block content %}
+<div class="well">
+</div>
+<div class="alert alert-error" role="alert"> {{ info }}</div>
+<div class="container">
+    <form action="{% url 'login' %}" method="post">
+    {% csrf_token %}
+    {{form.as_table}}
+    <input type="submit" value="提交" />
+    </form>
+
+</div>
+{% endblock %}

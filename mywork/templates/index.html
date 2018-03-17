@@ -1,0 +1,43 @@
+
+{% extends "base.html" %}
+{% block title %}表格{% endblock %}
+{% block content %}
+
+<div class="well">
+</div>
+<div class="container">
+{% if table_list %}
+    <table class="table">
+        <thead><tr><td>#</td><td>名称</td><td>创建日期</td></tr></thead>
+        <tbody>
+         {% for project in table_list %}
+        <tr>
+            <td>{{ project.id }}</td>
+            <td><a href="/table/{{ project.id }}">{{project.table_name}}</a></td>
+            <td>{{ project.created }}</td>
+        </tr>
+
+        {% endfor %}
+        </tbody>
+    </table>
+     {% if is_paginated %}
+    <div class="pagination">
+        <span class="page-links">
+            {% if page_obj.has_previous %}
+                <a href="/project?page={{ page_obj.previous_page_number }}">上一页</a>
+            {% endif %}
+            {% if page_obj.has_next %}
+                <a href="/project?page={{ page_obj.next_page_number }}">下一页</a>
+            {% endif %}
+            <span class="page-current">
+                第{{ page_obj.number }}页 ，共{{ page_obj.paginator.num_pages }}页。
+            </span>
+        </span>
+    </div>
+    {%endif%}
+{% else %}
+    <p>没有报告</p>
+{% endif %}
+    <p><a href="{% url 'new_table' %}"> 新建</a></p>
+</div>
+{% endblock %}

@@ -2,12 +2,112 @@
 {% block title %}表格{% endblock %}
 {% block content %}
 <div class="well"></div>
+
+<div class="pull-right">
+    <a href="#" data-toggle="modal" data-target="#message-modal" class="btn-sm btn-success">留言</a>
+    <a href="#" data-toggle="modal" data-target="#auth-modal" class="btn-sm btn-primary">分享</a>
+</div>
+
 <form role="form" action="{% url 'edit_table' table.id %}" method="post">
     {% csrf_token %}
-    <p>表格名称：　<input type="text" name="table_name" value="{{table.table_name}}"><button class="btn-xm primary">更新</button></p>
+    <p>表格名称：<input type="text" name="table_name" value="{{table.table_name}}">
+        <button class="btn-xm btn-primary">更新</button>
+    </p>
+
 </form>
 
 
-<iframe class="col-md-12" style="height:900px" src="http://192.168.0.94:8000/{{table.id}}"></iframe>
+<iframe class="col-md-12" style="height:900px" src="http://192.168.0.94:7777/{{table.id}}"></iframe>
+
+
+    <div class="modal fade" id="auth-modal" tabindex="-1" role="dialog" aria-labelledby="modal-label"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span
+                            aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title" id="modal-label">分享管理</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="list-group">
+                        <h4 class="list-group-item-heading">只读链接:</h4>
+                        <p class="list-group-item-text">
+                            <a href="http://192.168.0.94:7777/{{table.id}}/view">
+                                http://192.168.0.94:7777/{{table.id}}/view
+                            </a>
+                        </p>
+                    </div>
+
+                    <h4>添加协作者</h4>
+                    {% if users %}
+                        <table class="table">
+                            <thead><tr><td>组别</td><td>用户</td><td>权限</td></tr></thead>
+                            <tbody>
+                            {% for group, tab_user  in users.items %}
+                                {% for u in tab_user %}
+                                    {% ifnotequal u user %}
+                                        <tr>
+                                            <td>{{group}}</td>
+                                            <td>{{u.username}}</td>
+
+                                            {% if u in editors %}
+                                                <td><span class="label label-danger" onclick="editor(this)" id="{{u.id}}">可编辑(删除)</span></td>
+                                            {% else %}
+                                                <td><span class="label label-success" onclick="editor(this)" id="{{u.id}}">只读(添加)</span></td>
+                                            {% endif %}
+
+                                        </tr>
+                                    {% endifnotequal %}
+                                {% endfor %}
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+
+<script type="text/javascript">
+
+    function editor(obj){
+        if ($('#'+obj.id).attr("class") == "label label-danger"){
+            $.get('/deleted_editor/{{table.id}}/'+obj.id).done(function(response){
+                    if (response.status == 200) {
+                        alert('成功')
+                        $('#'+obj.id).removeClass("label-danger")
+                        $('#'+obj.id).addClass("label-success")
+                        $('#'+obj.id).text("只读(添加)")
+                    } else {
+                        alert(response.message)
+                    }
+
+                })
+
+        } else {
+            $.get('/add_editor/{{table.id}}/'+obj.id).done(function(response){
+                if (response.status == 200) {
+                    alert('成功')
+                    $('#'+obj.id).removeClass("label-success")
+                    $('#'+obj.id).addClass("label-danger")
+                    $('#'+obj.id).text("可编辑(删除)")
+                } else {
+                    alert(response.message)
+                }
+
+            })
+
+        }
+
+    }
+
+</script>
 
 {% endblock %}

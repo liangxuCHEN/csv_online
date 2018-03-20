@@ -21,9 +21,13 @@ from mywork import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     url(r'^$', views.TableListView.as_view(), name='index'),
+    url(r'^table_list', views.table_list, name='table_list'),
+    url(r'^project', views.TableListView.as_view(), name='index'),
     url(r'^table/(?P<table_id>\d+)/$', views.table_view, name='main_table'),
     url(r'^edit_table/(?P<table_id>\d+)/$', views.edit_table, name='edit_table'),
     url(r'^new_table$', views.new_table, name='new_table'),
+    url(r'^add_editor/(?P<tab_id>\d+)/(?P<user_id>\d+)/$', views.add_editor, name='add_editor'),
+    url(r'^deleted_editor/(?P<tab_id>\d+)/(?P<user_id>\d+)/$', views.deleted_editor, name='deleted_editor'),
     url(r'^login$', views.LoginView, name='login'),
     url(r'^logout$', views.LogoutView, name='logout'),
 ]

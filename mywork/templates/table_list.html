@@ -1,0 +1,29 @@
+
+{% extends "base.html" %}
+{% block title %}表格{% endblock %}
+{% block content %}
+
+<div class="well">
+</div>
+<div class="container">
+{% if table_list %}
+    <table class="table">
+        <thead><tr><td>#</td><td>名称</td><td>创建日期</td></tr></thead>
+        <tbody>
+         {% for project in table_list %}
+        <tr>
+            <td>{{ project.id }}</td>
+            <td><a href="/table/{{ project.id }}">{{project.table_name}}</a></td>
+            <td>{{ project.created }}</td>
+        </tr>
+
+        {% endfor %}
+        </tbody>
+    </table>
+
+{% else %}
+    <p>没有报告</p>
+{% endif %}
+    <p><a href="{% url 'new_table' %}"> 新建</a></p>
+</div>
+{% endblock %}

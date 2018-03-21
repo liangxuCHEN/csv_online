@@ -7,7 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User, Group
 from django.views.decorators.csrf import csrf_exempt
 from django.views import generic
-from mywork.models import TableModel, AuthTableModel
+from mywork.models import TableModel, AuthTableModel, TableMessageModel
 from mywork.forms import AuthenticationForm
 
 import json
@@ -48,6 +48,11 @@ def table_view(request, table_id):
             auth_table = AuthTableModel.objects.filter(table=table).first()
             if auth_table:
                 content['editors'] = auth_table.users.all()
+
+            # 备忘录
+            messages = TableMessageModel.objects.filter(table=table)
+            if messages:
+                content['messages'] = [meg.to_json() for meg in messages]
 
         return render(request, 'main_table.html', content)
     else:
@@ -123,6 +128,36 @@ def deleted_editor(request, tab_id, user_id):
             auth_table.users.remove(user)
 
         return HttpResponse(json.dumps({'status': 200, 'message': 'OK'}), content_type="application/json")
+    else:
+        return HttpResponse(json.dumps({'status': 500, 'message': '权限不足'}), content_type="application/json")
+
+
+@csrf_exempt
+def add_message(request):
+    if request.user.is_authenticated:
+
+        tab_id = request.GET.get('table_id') or -1
+        table = TableModel.objects.filter(id=tab_id).first()
+        if table is None:
+            return HttpResponse(json.dumps({'status': 400, 'message': '表格不存在'}), content_type="application/json")
+
+        # 新增备忘录
+        message = request.GET.get('message')
+
+        if message:
+            print(message)
+            table_message = TableMessageModel(
+                table=table,
+                user=request.user.username,
+                user_id=request.user.id,
+                content=message)
+            table_message.save()
+            return HttpResponse(
+                json.dumps({'status': 200, 'message': 'OK', 'content': table_message.to_json()}),
+                content_type="application/json")
+        else:
+            return HttpResponse(json.dumps({'status': 400, 'message': '内容不能为空'}), content_type="application/json")
+
     else:
         return HttpResponse(json.dumps({'status': 500, 'message': '权限不足'}), content_type="application/json")
 

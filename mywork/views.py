@@ -7,12 +7,40 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User, Group
 from django.views.decorators.csrf import csrf_exempt
 from django.views import generic
+from django.core.paginator import Paginator, InvalidPage, EmptyPage
+
 from mywork.models import TableModel, AuthTableModel, TableMessageModel
 from mywork.forms import AuthenticationForm
 
 import json
-import ethercalc
+from datetime import datetime, timedelta
+# import ethercalc
 # Create your views here.
+from online_work import settings
+
+
+def allow_all(response):
+    """
+    解决跨域的问题
+    :param response:
+    :return:
+    """
+    response["Access-Control-Allow-Origin"] = "*"
+    response["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
+    response["Access-Control-Max-Age"] = "1000"
+    response["Access-Control-Allow-Headers"] = "*"
+    return response
+
+
+def set_cookie(response, key, value, days_expire = 7):
+    if days_expire is None:
+        max_age = 365 * 24 * 60 * 60  #one year
+    else:
+        max_age = days_expire * 24 * 60 * 60
+    expires = datetime.strftime(datetime.utcnow() + timedelta(seconds=max_age), "%a, %d-%b-%Y %H:%M:%S GMT")
+    response.set_cookie(key, value, max_age=max_age, expires=expires, domain=settings.SESSION_COOKIE_DOMAIN)
+    print(response)
+
 
 class TableListView(generic.ListView):
     model = TableModel
@@ -23,21 +51,37 @@ class TableListView(generic.ListView):
 
 #重写表格列表
 def table_list(request):
+    """
+    可编写的表单
+    :param request: 
+    :return: 
+    """
     if request.user.is_authenticated:
         tables = []
         auth_tables = AuthTableModel.objects.filter(users=request.user)
         for a_tab in auth_tables:
             tables.append(a_tab.table)
 
-        return render(request, 'table_list.html', {'table_list': tables })
+        page_size = 20
+        paginator = Paginator(tables, page_size)
+        try:
+            page = int(request.GET.get('page', '1'))
+        except ValueError:
+            page = 1
+
+        try:
+            table_page = paginator.page(page)
+        except (EmptyPage, InvalidPage):
+            table_page = paginator.page(paginator.num_pages)
+
+        return render(request, 'table_list.html', {'table_list': table_page })
     else:
         return HttpResponseRedirect('/login')
 
 
-
 def table_view(request, table_id):
     if request.user.is_authenticated:
-        content = {}
+        content = {'table_domain': settings.TABEL_DOMAIN}
         table = TableModel.objects.filter(pk=table_id).first()
 
         if table:
@@ -54,7 +98,10 @@ def table_view(request, table_id):
             if messages:
                 content['messages'] = [meg.to_json() for meg in messages]
 
-        return render(request, 'main_table.html', content)
+
+        response = render(request, 'main_table.html', content)
+        set_cookie(response, 'power', 'editor')
+        return response
     else:
         return HttpResponseRedirect('/login')
 
@@ -73,10 +120,13 @@ def new_table(request):
         # 同组别用户列表
         users = get_users(request.user)
 
-        content = {'table': table, 'users': users}
+        content = {
+            'table': table,
+            'users': users,
+            'table_domain': settings.TABEL_DOMAIN
+        }
 
         content['editors'] = [request.user]
-
         return render(request, 'main_table.html', content)
     else:
         return HttpResponseRedirect('/login')
@@ -88,7 +138,7 @@ def edit_table(request, table_id):
             table = TableModel.objects.filter(pk=table_id).first()
             table.table_name = request.POST['table_name']
             table.save()
-        return render(request, 'main_table.html', {'table': table})
+        return render(request, 'main_table.html', {'table': table, 'table_domain': settings.TABEL_DOMAIN})
     else:
         return HttpResponseRedirect('/login')
 
@@ -174,7 +224,10 @@ def LoginView(request):
             user = authenticate(username=request.POST['username'], password=request.POST['password'])
             if user is not None:
                 login(request, user)
-                return HttpResponseRedirect('/')
+                response =redirect(to='/')
+                set_cookie(response, 'power', 'editor')
+                set_cookie(response, 'user_id', user.id)
+                return response
             else:
                 content['info'] = u"帐号或密码错误"
                 content['form'] = AuthenticationForm()
@@ -182,8 +235,27 @@ def LoginView(request):
     else:
         form = AuthenticationForm()
 
-    return render(request, 'login.html', {'form': form})
+    response = render(request, 'login.html', {'form': form})
+    set_cookie(response, 'power', 'public')
+    set_cookie(response, 'origin_domain_url', settings.ORIGIN_DOMAIN)
+    return response
 
+
+def check_power(request):
+    print(request.GET)
+    table_url = request.GET.get('table_name')
+    user_id = request.GET.get('user_id')
+    table = AuthTableModel.objects.filter(table__table_url=table_url).first()
+    if table and user_id:
+        has_power = table.users.filter(id=user_id)
+        if has_power:
+            response = HttpResponse(json.dumps({'status': 200, 'message': '可编辑'}), content_type="application/json")
+        else:
+            response = HttpResponse(json.dumps({'status': 300, 'message': '可读'}), content_type="application/json")
+    else:
+        response= HttpResponse(json.dumps({'status': 500, 'message': '缺少参数'}), content_type="application/json")
+
+    return allow_all(response)
 
 def get_users(user):
     groups = Group.objects.filter(user=user)

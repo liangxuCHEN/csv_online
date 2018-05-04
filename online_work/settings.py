@@ -119,3 +119,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+SESSION_COOKIE_DOMAIN = '192.168.0.94'
+ORIGIN_DOMAIN = '192.168.0.94:8686'
+TABEL_DOMAIN = '192.168.0.94:8000'

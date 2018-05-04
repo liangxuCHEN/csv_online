@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}表格{% endblock %}
 {% block content %}
-<div class="well"></div>
+<div class="well">
+
+</div>
+
 
 <div class="pull-right">
     <a href="#" data-toggle="modal" data-target="#message-modal" class="btn-sm btn-success">备忘录</a>
@@ -17,7 +20,7 @@
 </form>
 
 
-<iframe class="col-md-12" style="height:900px" src="http://192.168.0.94:8000/{{table.table_url}}"></iframe>
+<iframe class="col-md-12" style="height:900px" src="http://{{table_domain}}/{{table.table_url}}"></iframe>
 
 
     <div class="modal fade" id="auth-modal" tabindex="-1" role="dialog" aria-labelledby="modal-label"
@@ -34,7 +37,7 @@
                         <h4 class="list-group-item-heading">只读链接:</h4>
                         <p class="list-group-item-text">
                             <a target="_blank" href="http://192.168.0.94:8000/{{table.table_url}}/view">
-                                http://192.168.0.94:7777/{{table.table_url}}/view
+                                http://{{table_domain}}/{{table.table_url}}/view
                             </a>
                         </p>
                     </div>
@@ -73,7 +76,7 @@
     </div>
 
     <div class="modal fade" id="message-modal" tabindex="-1" role="dialog" aria-labelledby="modal-label"
-         aria-hidden="true">
+         aria-hidden="true" draggable="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -86,7 +89,7 @@
                         <textarea rows="3" id="message"></textarea><br>
                         <a href="#" class="btn-sm btn-primary" onclick="add_message()">提交</a>
                     </div>
-                    <div class="row" id="message_box">
+                    <div class="list-group" id="message_box">
                         {% if messages %}
 
                                 {% for meg  in messages %}
@@ -116,6 +119,9 @@
             </div>
         </div>
     </div>
+
+
+
 {% endblock %}
 
 {% block script %}
@@ -126,7 +132,7 @@
         if ($('#'+obj.id).attr("class") == "label label-danger"){
             $.get('/deleted_editor/{{table.id}}/'+obj.id).done(function(response){
                     if (response.status == 200) {
-                        alert('成功')
+                        alert('成功删除写作人')
                         $('#'+obj.id).removeClass("label-danger")
                         $('#'+obj.id).addClass("label-success")
                         $('#'+obj.id).text("只读(添加)")
@@ -139,7 +145,7 @@
         } else {
             $.get('/add_editor/{{table.id}}/'+obj.id).done(function(response){
                 if (response.status == 200) {
-                    alert('成功')
+                    alert('成功添加协作人')
                     $('#'+obj.id).removeClass("label-success")
                     $('#'+obj.id).addClass("label-danger")
                     $('#'+obj.id).text("可编辑(删除)")
@@ -165,7 +171,6 @@
             success:function(response){
                         $('#no_message').remove()
                         if (response.status == 200) {
-                            alert('成功')
                             var html_text = '<div class="panel panel-default"><div class="panel-heading"><h3 class="panel-title">'
 
                             html_text += '用户:' + response.content.user

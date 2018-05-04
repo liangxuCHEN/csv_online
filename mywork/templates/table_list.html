@@ -6,24 +6,45 @@
 <div class="well">
 </div>
 <div class="container">
-{% if table_list %}
-    <table class="table">
-        <thead><tr><td>#</td><td>名称</td><td>创建日期</td></tr></thead>
-        <tbody>
-         {% for project in table_list %}
-        <tr>
-            <td>{{ project.id }}</td>
-            <td><a href="/table/{{ project.id }}">{{project.table_name}}</a></td>
-            <td>{{ project.created }}</td>
-        </tr>
+    <p><a href="{% url 'new_table' %}" class="btn btn-primary btn-lg"> 新建表格</a></p>
+    <hr>
+    {% if table_list %}
+        <table class="table table-hover">
+            <thead><tr><td>#</td><td>名称</td><td>创建日期</td></tr></thead>
+            <tbody>
+             {% for project in table_list %}
+            <tr>
+                <td>{{ project.id }}</td>
+                <td><a href="/table/{{ project.id }}">{{project.table_name}}</a></td>
+                <td>{{ project.created }}</td>
+            </tr>
 
-        {% endfor %}
-        </tbody>
-    </table>
+            {% endfor %}
+            </tbody>
+        </table>
+        <div class="pull-right">
+          <ul class="pagination">
+                {% if table_list.has_previous %}
+                    <li><a href="?page={{ table_list.previous_page_number }}">上一页</a></li>
+                {% endif %}
+                <script type="text/javascript">
+                for (var i=1;i<={{ table_list.paginator.num_pages }};i++)
+                {
+                 if (i == {{ table_list.number }}) {
+                    document.write("<li class='active'> <a href='?page=" + i + "'>" + i + "</a></li>");
+                 } else {
+                  document.write("<li> <a href='?page=" + i + "'>" + i + "</a></li>");
+                 }
+                }
+                </script>
+                {% if table_list.has_next %}
+                   <li> <a href="?page={{ table_list.next_page_number }}">下一页</a></li>
+                {% endif %}
+          </ul>
+      </div>
+    {% else %}
+        <p>没有报告</p>
+    {% endif %}
 
-{% else %}
-    <p>没有报告</p>
-{% endif %}
-    <p><a href="{% url 'new_table' %}"> 新建</a></p>
 </div>
 {% endblock %}

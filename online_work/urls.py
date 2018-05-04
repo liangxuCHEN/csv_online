@@ -31,6 +31,8 @@ urlpatterns = [
     url(r'^add_message$', views.add_message, name='add_message'),
     url(r'^login$', views.LoginView, name='login'),
     url(r'^logout$', views.LogoutView, name='logout'),
+    url(r'^check_power$', views.check_power, name='check_power'),
+
 ]
 
 
